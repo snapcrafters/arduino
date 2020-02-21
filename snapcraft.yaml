@@ -1,0 +1,107 @@
+# TODO:
+#
+#  - GTK2 themes
+#  - raw-usb testing
+#
+# name: arduino-mhall119
+name: arduino
+version: 1.8.12
+summary: Arduino IDE
+description: Open-source electronics prototyping platform
+grade: stable
+
+base: core18
+confinement: strict
+
+apps:
+  arduino:
+    command: desktop-launch $SNAP/arduino-snap
+    plugs:
+      - x11
+      - unity7
+      - home
+      - network
+      - serial-port
+      - raw-usb
+  builder:
+    command: arduino-builder
+
+parts:
+  upstream:
+    source: https://www.arduino.cc/download.php?f=/arduino-1.8.12-linux64.tar.xz
+    source-type: tar
+    plugin: dump
+    prime:
+      - -install.sh
+      - -uninstall.sh
+      - -java/lib/ext/jfxrt.jar
+      - -java/lib/jfxswt.jar
+      - -java/lib/*/libjfxwebkit.so
+      - -java/lib/*/libjfxmedia.so
+    stage-packages:
+      - libxtst6
+    after:
+      - desktop-gtk2
+  launcher:
+    plugin: dump
+    source: .
+    prime:
+      - arduino-snap
+
+  # This part installs the `desktop-launch` script which initialises desktop
+  # features such as fonts, themes and the XDG environment. It also installs
+  # the GTK2 runtime libraries.
+  #
+  # It is copied straight from the snapcraft desktop helpers project. Please
+  # periodically check the source for updates and copy the changes.
+  #    https://github.com/ubuntu/snapcraft-desktop-helpers/blob/master/snapcraft.yaml
+  #    
+  desktop-gtk2:
+    source: https://github.com/ubuntu/snapcraft-desktop-helpers.git
+    source-subdir: gtk
+    plugin: make
+    make-parameters: ["FLAVOR=gtk2"]
+    build-packages:
+      - build-essential
+      - libgtk2.0-dev
+    stage-packages:
+      - libxkbcommon0  # XKB_CONFIG_ROOT
+      - ttf-ubuntu-font-family
+      - dmz-cursor-theme
+      - light-themes
+      - adwaita-icon-theme
+      - gnome-themes-standard
+      - shared-mime-info
+      - libgtk2.0-0
+      - libgdk-pixbuf2.0-0
+      - libglib2.0-bin
+      - libgtk2.0-bin
+      - unity-gtk2-module
+      - locales-all
+      - libappindicator1
+      - xdg-user-dirs
+      - ibus-gtk
+      - libibus-1.0-5
+
+environment:
+  GTK_PATH: $SNAP/lib/gtk-2.0
+  GTK_DATA_PREFIX: $SNAP
+  XDG_DATA_DIRS: $SNAP/share:$XDG_DATA_DIRS
+
+plugs:
+  gtk-2-engines:
+    interface: content
+    target: $SNAP/lib/gtk-2.0
+    default-provider: gtk2-common-themes
+  gtk-2-themes:
+    interface: content
+    target: $SNAP/share/themes
+    default-provider: gtk-common-themes
+  icon-themes:
+    interface: content
+    target: $SNAP/share/icons
+    default-provider: gtk-common-themes
+  sound-themes:
+    interface: content
+    target: $SNAP/share/sounds
+    default-provider: gtk-common-themes
