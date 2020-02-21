@@ -1,13 +1,24 @@
-# TODO:
-#
-#  - GTK2 themes
-#  - raw-usb testing
-#
 # name: arduino-mhall119
 name: arduino
+title: Arduino IDE
 version: 1.8.12
-summary: Arduino IDE
-description: Open-source electronics prototyping platform
+summary: Write code and upload it to your Arduino-compatible board.
+description: |
+  Arduino is an open-source physical computing platform based on a simple I/O board and a development environment that implements the Processing/Wiring language. Arduino can be used to develop stand-alone interactive objects or can be connected to software on your computer (e.g. Flash, Processing and MaxMSP). The boards can be assembled by hand or purchased preassembled at https://arduino.cc
+
+  **Setup**
+
+  In order to upload code an arduino board over USB, you need to add your user to the `dailout` group and connect the snap to the `raw-usb` socket. Open a terminal window, run the following commands an *reboot* your computer.
+
+  > `sudo usermod -a -G dialout $USER`
+
+  > `sudo snap connect arduino:raw-usb`
+
+  Now restart your computer and you're good to go!
+
+license: GPL-2.0
+icon: snap/gui/arduino.png
+
 grade: stable
 
 base: core18
