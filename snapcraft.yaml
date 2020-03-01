@@ -43,6 +43,10 @@ apps:
       - raw-usb
   builder:
     command: arduino-builder
+    plugs:
+      - network
+      - serial-port
+      - raw-usb
 
 parts:
   upstream:
