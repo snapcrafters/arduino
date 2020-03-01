@@ -1,8 +1,3 @@
-#
-# TODO:
-# - arm support
-# - snapcraft-project-version
-# 
 # name: arduino-mhall119
 name: arduino
 title: Arduino IDE
@@ -137,11 +132,6 @@ parts:
       - xdg-user-dirs
       - ibus-gtk
       - libibus-1.0-5
-
-environment:
-  GTK_PATH: $SNAP/lib/gtk-2.0
-  GTK_DATA_PREFIX: $SNAP
-  XDG_DATA_DIRS: $SNAP/share:$XDG_DATA_DIRS
 
 plugs:
   gtk-2-engines:
