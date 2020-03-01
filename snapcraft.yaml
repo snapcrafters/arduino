@@ -67,6 +67,7 @@ parts:
       - -java/lib/*/libjfxmedia.so
     stage-packages:
       - libxtst6
+      - libcanberra-gtk-module
     after:
       - desktop-gtk2
   launcher:
@@ -149,13 +150,13 @@ plugs:
     default-provider: gtk2-common-themes
   gtk-2-themes:
     interface: content
-    target: $SNAP/share/themes
+    target: $SNAP/data-dir/themes
     default-provider: gtk-common-themes
   icon-themes:
     interface: content
-    target: $SNAP/share/icons
+    target: $SNAP/data-dir/icons
     default-provider: gtk-common-themes
   sound-themes:
     interface: content
-    target: $SNAP/share/sounds
+    target: $SNAP/data-dir/sounds
     default-provider: gtk-common-themes
