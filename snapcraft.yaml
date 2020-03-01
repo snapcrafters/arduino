@@ -36,6 +36,9 @@ architectures:
 apps:
   arduino:
     command: desktop-launch $SNAP/arduino-snap
+    environment:
+      # Fallback to XWayland if running in a Wayland session.
+      DISABLE_WAYLAND: 1
     plugs:
       - x11
       - unity7
@@ -68,9 +71,36 @@ parts:
       - desktop-gtk2
   launcher:
     plugin: dump
-    source: .
+    source: scripts
     prime:
       - arduino-snap
+  dark-arduino-theme:
+    plugin: dump
+    source: https://github.com/jeffThompson/DarkArduinoTheme.git
+    build-packages:
+      - zip
+    override-build: |
+      snapcraftctl build
+      mkdir -p $SNAPCRAFT_PART_INSTALL/lib/theme/
+      cd theme
+      zip -r $SNAPCRAFT_PART_INSTALL/lib/theme/dark-arduino-theme.zip *
+    stage:
+      - lib/theme/dark-arduino-theme.zip
+
+  # https://snapcraft-utils-library.readthedocs.io/en/latest/lib/cleanup.html
+  cleanup:
+    after:  # Make this part run last; list all your other parts here
+      - upstream
+      - launcher
+      - dark-arduino-theme
+    plugin: nil
+    build-snaps:  # List all content-snaps and base snaps you're using here
+      - core18
+    override-prime: |
+      set -eux
+      for snap in "core18"; do  # List all content-snaps and base snaps you're using here
+        cd "/snap/$snap/current" && find . -type f,l -exec rm -f "$SNAPCRAFT_PRIME/{}" \;
+      done
 
   # This part installs the `desktop-launch` script which initialises desktop
   # features such as fonts, themes and the XDG environment. It also installs
