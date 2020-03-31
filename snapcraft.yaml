@@ -8,11 +8,9 @@ description: |
 
   **Setup**
 
-  In order to upload code an arduino board over USB, you need to add your user to the `dailout` group and connect the snap to the `raw-usb` socket. Open a terminal window, run the following commands an *reboot* your computer.
+  In order to upload code an arduino board over USB, you need to add your user to the `dailout` group. Open a terminal window, run the following command and *reboot* your computer.
 
   > `sudo usermod -a -G dialout $USER`
-
-  > `sudo snap connect arduino:raw-usb`
 
   Now restart your computer and you're good to go!
 license: GPL-2.0
@@ -87,7 +85,13 @@ parts:
     stage:
       - lib/theme/dark-arduino-theme.zip
 
-  # https://snapcraft-utils-library.readthedocs.io/en/latest/lib/cleanup.html
+  # This part removes all the files in this snap which already exist in
+  # connected content and base snaps. Since these files will be available
+  # at runtime from the content and base snaps, they do not need to be
+  # included in this snap itself.
+  #
+  # More info: https://snapcraft-utils-library.readthedocs.io/en/latest/lib/cleanup.html 
+  #
   cleanup:
     after:  # Make this part run last; list all your other parts here
       - upstream
@@ -96,9 +100,11 @@ parts:
     plugin: nil
     build-snaps:  # List all content-snaps and base snaps you're using here
       - core18
+      - gtk-common-themes
+      - gtk2-common-themes
     override-prime: |
       set -eux
-      for snap in "core18"; do  # List all content-snaps and base snaps you're using here
+      for snap in "core18" "gtk-common-themes" "gtk2-common-themes"; do  # List all content-snaps and base snaps you're using here
         cd "/snap/$snap/current" && find . -type f,l -exec rm -f "$SNAPCRAFT_PRIME/{}" \;
       done
 
@@ -154,3 +160,6 @@ plugs:
     interface: content
     target: $SNAP/data-dir/sounds
     default-provider: gtk-common-themes
+  serial-port:
+    allow-auto-connection:
+      slots-per-plug: "*"
