@@ -8,7 +8,7 @@ description: |
 
   **Setup**
 
-  In order to upload code an arduino board over USB, you need to add your user to the `dailout` group. Open a terminal window, run the following command and *reboot* your computer.
+  In order to upload code an arduino board over USB, you need to add your user to the `dialout` group. Open a terminal window, run the following command and *reboot* your computer.
 
   > `sudo usermod -a -G dialout $USER`
 
