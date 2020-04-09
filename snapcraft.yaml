@@ -28,7 +28,10 @@ architectures:
 
 apps:
   arduino:
-    command: desktop-launch $SNAP/arduino-snap
+    command: arduino-snap
+    command-chain:
+      - bin/desktop-launch
+      - check-permissions
     environment:
       # Fallback to XWayland if running in a Wayland session.
       DISABLE_WAYLAND: 1
@@ -70,8 +73,24 @@ parts:
   launcher:
     plugin: dump
     source: scripts
-    prime:
-      - arduino-snap
+    after:
+      - yad-gtk2
+  # Since Arduino itself is a GTK+ 2 app, it's better to use the GTK+ 2 version
+  # of yad too, so we don't need to ship GTK+ 3 dependencies.
+  yad-gtk2:
+    plugin: autotools
+    source: https://github.com/step-/yad.git
+    source-tag: "0.42.14"
+    override-build: |
+      set -e
+      autoreconf -ivf
+      intltoolize
+      snapcraftctl build
+    build-packages:
+      - build-essential
+      - libgtk2.0-dev
+      - intltool
+
   dark-arduino-theme:
     plugin: dump
     source: https://github.com/jeffThompson/DarkArduinoTheme.git
@@ -160,6 +179,3 @@ plugs:
     interface: content
     target: $SNAP/data-dir/sounds
     default-provider: gtk-common-themes
-  serial-port:
-    allow-auto-connection:
-      slots-per-plug: "*"
