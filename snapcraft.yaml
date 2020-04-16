@@ -40,6 +40,7 @@ apps:
       - x11
       - unity7
       - home
+      - removable-media
       - network
       - serial-port
       - raw-usb
