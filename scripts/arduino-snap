@@ -1,5 +1,18 @@
 #!/bin/bash
 
+
+# Arduino has the nasty habit of specifying the real path in preferences.txt,
+# instead of the path using the `current` symlink. This sed magic replaces all
+# real paths to $SNAP_USER_DATA with ones using the `current` symlink.
+#   Fixes https://github.com/snapcrafters/arduino/issues/4
+snap_user_base=$(dirname "$SNAP_USER_DATA")
+for perf_file in "$SNAP_USER_DATA"/.arduino*/preferences.txt; do
+  [ -f "$perf_file" ] || continue
+  sed -i -r "s/${snap_user_base//\//\\/}\/[0-9]+\//${snap_user_base//\//\\/}\/current\//g" "$perf_file"
+done
+
+
+
 APPDIR="$(dirname -- "$(readlink -f -- "${0}")" )"
 
 for LIB in \
