@@ -50,6 +50,10 @@ apps:
       - network
       - serial-port
       - raw-usb
+  pip:
+    command: bin/pip
+    plugs:
+      - network
 
 parts:
   upstream:
@@ -105,6 +109,25 @@ parts:
       zip -r $SNAPCRAFT_PART_INSTALL/lib/theme/dark-arduino-theme.zip *
     stage:
       - lib/theme/dark-arduino-theme.zip
+
+  # Python 2 is required for certain plugins.
+  # See https://github.com/snapcrafters/arduino/issues/5
+  python-2:
+    source: ""
+    plugin: python
+    python-version: python2
+    python-packages:
+      - pyserial
+      - pip
+
+  # Add a wrapper for pip so users can install additional dependencies.
+  pip:
+    after: 
+      - python-2
+    plugin: dump
+    source: python
+    organize:
+      pip: /bin/pip
 
   # This part removes all the files in this snap which already exist in
   # connected content and base snaps. Since these files will be available

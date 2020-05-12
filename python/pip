@@ -1,0 +1,4 @@
+# always run pip in user mode since root fs is not
+# writeable.
+
+PIP_USER=1 exec python -m pip "$@"
