@@ -51,7 +51,9 @@ apps:
       - serial-port
       - raw-usb
   pip:
-    command: bin/pip
+    command: python -m pip
+    environment:
+      PIP_USER: 1
     plugs:
       - network
 
@@ -112,22 +114,18 @@ parts:
 
   # Python 2 is required for certain plugins.
   # See https://github.com/snapcrafters/arduino/issues/5
-  python-2:
+  python3:
     source: ""
     plugin: python
-    python-version: python2
+    python-version: python3
     python-packages:
       - pyserial
       - pip
-
-  # Add a wrapper for pip so users can install additional dependencies.
-  pip:
-    after: 
-      - python-2
-    plugin: dump
-    source: python
-    organize:
-      pip: /bin/pip
+    override-prime: |
+      set -ex
+      snapcraftctl prime
+      cd $SNAPCRAFT_PRIME/usr/bin/
+      ln -sfn python3 python
 
   # This part removes all the files in this snap which already exist in
   # connected content and base snaps. Since these files will be available
