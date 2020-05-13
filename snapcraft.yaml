@@ -112,12 +112,11 @@ parts:
     stage:
       - lib/theme/dark-arduino-theme.zip
 
-  # Python 2 is required for certain plugins.
+  # Python 3 is required for certain plugins.
   # See https://github.com/snapcrafters/arduino/issues/5
   python3:
     source: ""
     plugin: python
-    python-version: python3
     python-packages:
       - pyserial
       - pip
