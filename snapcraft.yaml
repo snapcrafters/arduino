@@ -13,6 +13,16 @@ description: |
   > `sudo usermod -a -G dialout $USER`
 
   Now restart your computer and you're good to go!
+
+  **Python 3 support**
+
+  This version of Arduino IDE runs in a sandbox for improved security and stability. As a result, it does not have access to the Python libraries on your device.
+
+  Python 3 and the `serial` library are installed inside of the sandbox so they can be used by plugins. If a plugin needs additional Python 3 libraries, you can install them using the `arduino.pip` command. For example, the following command installs the `requests` library inside of the sandbox so the Arduino IDE can use it.
+
+  > `arduino.pip install requests`
+
+  Python 2 is not supported in this snap because it reached end of life on January 1st 2020.
 license: GPL-2.0
 icon: snap/gui/arduino.png
 grade: stable
