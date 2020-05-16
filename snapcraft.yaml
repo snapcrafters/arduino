@@ -57,6 +57,7 @@ apps:
       - network
       - serial-port
       - raw-usb
+      - network-bind  # For OTA updates
   builder:
     command: arduino-builder
     plugs:
