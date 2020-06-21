@@ -29,6 +29,7 @@ if [[ ! -f $SNAP_USER_COMMON/dont-warn-unsupported ]]; then
     --title="$YAD_TITLE" \
     --form \
     --center \
+    --width=600 \
     --field="$TEXT1":LBL \
     --field="$COMMAND1":LBL \
     --field="$COMMAND2":LBL \

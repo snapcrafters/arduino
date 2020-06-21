@@ -1,7 +1,7 @@
 # name: arduino-mhall119   # uncomment for arduino-mhall119 builds
 name: arduino
 title: Arduino IDE
-version: 1.8.12
+version: 1.8.13
 summary: Write code and upload it to your Arduino-compatible board.
 description: |
   Arduino is an open-source physical computing platform based on a simple I/O board and a development environment that implements the Processing/Wiring language. Arduino can be used to develop stand-alone interactive objects or can be connected to software on your computer (e.g. Flash, Processing and MaxMSP). The boards can be assembled by hand or purchased preassembled at https://arduino.cc
@@ -39,32 +39,29 @@ architectures:
   - build-on: armhf
   - build-on: arm64
 
+environment:
+  PYTHONPATH: $PYTHONPATH:$SNAP/lib/python3.6/site-packages
+
 apps:
   arduino:
+    extensions:
+      - gnome-3-28
     command: arduino-snap
     command-chain:
-      - bin/desktop-launch
       - check-permissions
       # - warn-unsupported  # uncomment for arduino-mhall119 builds
     environment:
       # Fallback to XWayland if running in a Wayland session.
       DISABLE_WAYLAND: 1
     plugs:
-      - x11
       - unity7
       - home
       - removable-media
       - network
       - serial-port
       - raw-usb
-  builder:
-    command: arduino-builder
-    plugs:
-      - network
-      - serial-port
-      - raw-usb
   pip:
-    command: python -m pip
+    command: usr/bin/python -m pip
     environment:
       PIP_USER: 1
     plugs:
@@ -72,45 +69,22 @@ apps:
 
 parts:
   upstream:
-    source:
-      - on amd64: https://www.arduino.cc/download.php?f=/arduino-$SNAPCRAFT_PROJECT_VERSION-linux64.tar.xz
-      - on i386: https://www.arduino.cc/download.php?f=/arduino-$SNAPCRAFT_PROJECT_VERSION-linux32.tar.xz
-      - on armhf: https://www.arduino.cc/download.php?f=/arduino-$SNAPCRAFT_PROJECT_VERSION-linuxarm.tar.xz
-      - on arm64: https://www.arduino.cc/download.php?f=/arduino-$SNAPCRAFT_PROJECT_VERSION-linuxaarch64.tar.xz
+    source: https://github.com/arduino/Arduino/releases/download/$SNAPCRAFT_PROJECT_VERSION/arduino-$SNAPCRAFT_PROJECT_VERSION.tar.xz
     source-type: tar
-    plugin: dump
-    prime:
-      - -install.sh
-      - -uninstall.sh
-      - -java/lib/ext/jfxrt.jar
-      - -java/lib/jfxswt.jar
-      - -java/lib/*/libjfxwebkit.so
-      - -java/lib/*/libjfxmedia.so
+    plugin: ant
+    ant-buildfile: build/build.xml
+    override-build: |
+      set -ex
+      snapcraftctl build
+      cp -a  $SNAPCRAFT_PART_BUILD/build/linux/work/* $SNAPCRAFT_PART_INSTALL
     stage-packages:
-      - libxtst6
-      - libcanberra-gtk-module
-    after:
-      - desktop-gtk2
+      - openjdk-11-jre  # the ant plugin adds the headless jre instead of the full jre.
+
   launcher:
     plugin: dump
     source: scripts
-    after:
-      - yad-gtk2
-  # Since Arduino itself is a GTK+ 2 app, it's better to use the GTK+ 2 version
-  # of yad too, so we don't need to ship GTK+ 3 dependencies.
-  yad-gtk2:
-    plugin: autotools
-    source: https://github.com/step-/yad.git
-    source-tag: "0.42.14"
-    override-build: |
-      set -e
-      autoreconf -ivf
-      intltoolize
-      snapcraftctl build
-    build-packages:
-      - build-essential
-      - libgtk2.0-dev
-      - intltool
+    stage-packages:
+      - yad
 
   dark-arduino-theme:
     plugin: dump
@@ -125,7 +99,7 @@ parts:
     stage:
       - lib/theme/dark-arduino-theme.zip
 
-  # Python 3 is required for certain plugins.
+  # Python 3 is required for certain plugins and they expect python to point to python3.
   # See https://github.com/snapcrafters/arduino/issues/5
   python3:
     source: ""
@@ -136,8 +110,8 @@ parts:
     override-prime: |
       set -ex
       snapcraftctl prime
-      cd $SNAPCRAFT_PRIME/usr/bin/
-      ln -sfn python3 python
+      echo 'python3 "$@"\n' > $SNAPCRAFT_PRIME/usr/bin/python
+      chmod a+x $SNAPCRAFT_PRIME/usr/bin/python
 
   # This part removes all the files in this snap which already exist in
   # connected content and base snaps. Since these files will be available
@@ -151,66 +125,13 @@ parts:
       - upstream
       - launcher
       - dark-arduino-theme
+      - python3
     plugin: nil
     build-snaps:  # List all content-snaps and base snaps you're using here
       - core18
-      - gtk-common-themes
-      - gtk2-common-themes
+      - gnome-3-28-1804
     override-prime: |
       set -eux
-      for snap in "core18" "gtk-common-themes" "gtk2-common-themes"; do  # List all content-snaps and base snaps you're using here
+      for snap in "core18" "gnome-3-28-1804" ; do  # List all content-snaps and base snaps you're using here
         cd "/snap/$snap/current" && find . -type f,l -exec rm -f "$SNAPCRAFT_PRIME/{}" \;
       done
-
-  # This part installs the `desktop-launch` script which initialises desktop
-  # features such as fonts, themes and the XDG environment. It also installs
-  # the GTK2 runtime libraries.
-  #
-  # It is copied straight from the snapcraft desktop helpers project. Please
-  # periodically check the source for updates and copy the changes.
-  #    https://github.com/ubuntu/snapcraft-desktop-helpers/blob/master/snapcraft.yaml
-  #    
-  desktop-gtk2:
-    source: https://github.com/ubuntu/snapcraft-desktop-helpers.git
-    source-subdir: gtk
-    plugin: make
-    make-parameters: ["FLAVOR=gtk2"]
-    build-packages:
-      - build-essential
-      - libgtk2.0-dev
-    stage-packages:
-      - libxkbcommon0  # XKB_CONFIG_ROOT
-      - ttf-ubuntu-font-family
-      - dmz-cursor-theme
-      - light-themes
-      - adwaita-icon-theme
-      - gnome-themes-standard
-      - shared-mime-info
-      - libgtk2.0-0
-      - libgdk-pixbuf2.0-0
-      - libglib2.0-bin
-      - libgtk2.0-bin
-      - unity-gtk2-module
-      - locales-all
-      - libappindicator1
-      - xdg-user-dirs
-      - ibus-gtk
-      - libibus-1.0-5
-
-plugs:
-  gtk-2-engines:
-    interface: content
-    target: $SNAP/lib/gtk-2.0
-    default-provider: gtk2-common-themes
-  gtk-2-themes:
-    interface: content
-    target: $SNAP/data-dir/themes
-    default-provider: gtk-common-themes
-  icon-themes:
-    interface: content
-    target: $SNAP/data-dir/icons
-    default-provider: gtk-common-themes
-  sound-themes:
-    interface: content
-    target: $SNAP/data-dir/sounds
-    default-provider: gtk-common-themes

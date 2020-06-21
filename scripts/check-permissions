@@ -21,13 +21,14 @@ https://github.com/snapcrafters/arduino/issues/\
 "
 TEXT4="\\n\\n"
 
-if [[ ! -f $SNAP_USER_COMMON/dont-warn-permissions && "$(groups)" != *"$GROUP"* ]]; then
+if [[ -n DEBUG_CHECK_PERMISSIONS ||  ( ! -f $SNAP_USER_COMMON/dont-warn-permissions && "$(groups)" != *"$GROUP"* ) ]]; then
     # I'm using `form` here instead of `text`, because that allows me to split
     # the text into multiple parts which can each be selected independently.
     yad \
     --title="$YAD_TITLE" \
     --form \
     --center \
+    --width=600 \
     --field="$TEXT1":LBL \
     --field="$COMMAND":LBL \
     --field="$TEXT2":LBL \
@@ -39,7 +40,6 @@ if [[ ! -f $SNAP_USER_COMMON/dont-warn-permissions && "$(groups)" != *"$GROUP"* 
     --borders=50 \
     --selectable-labels \
     --button=gtk-ok 2>&1 | grep TRUE && touch $SNAP_USER_COMMON/dont-warn-permissions
-
 fi
 
 exec "$@"
