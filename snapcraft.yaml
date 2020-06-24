@@ -111,7 +111,7 @@ parts:
     override-prime: |
       set -ex
       snapcraftctl prime
-      echo 'python3 "$@"\n' > $SNAPCRAFT_PRIME/usr/bin/python
+      echo '#!/usr/bin/env bash\npython3 "$@"\n' > $SNAPCRAFT_PRIME/usr/bin/python
       chmod a+x $SNAPCRAFT_PRIME/usr/bin/python
 
   # This part removes all the files in this snap which already exist in
