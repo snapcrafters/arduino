@@ -21,7 +21,7 @@ https://github.com/snapcrafters/arduino/issues/\
 "
 TEXT4="\\n\\n"
 
-if [[ -n DEBUG_CHECK_PERMISSIONS ||  ( ! -f $SNAP_USER_COMMON/dont-warn-permissions && "$(groups)" != *"$GROUP"* ) ]]; then
+if [[ -n "$DEBUG_CHECK_PERMISSIONS" ||  ( ! -f $SNAP_USER_COMMON/dont-warn-permissions && "$(groups)" != *"$GROUP"* ) ]]; then
     # I'm using `form` here instead of `text`, because that allows me to split
     # the text into multiple parts which can each be selected independently.
     yad \
