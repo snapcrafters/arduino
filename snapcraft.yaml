@@ -13,6 +13,17 @@ description: |
   > `sudo usermod -a -G dialout $USER`
 
   Now restart your computer and you're good to go!
+  
+  If you have one of the following boards, you need to grant specific permissions to your user for accessing directly the USB. This issue is more detailed [here](https://github.com/snapcrafters/arduino/issues/10#issuecomment-716683018)
+  
+  - Arduino Uno WiFi Rev2, ATMEGA328
+  
+  For granting this direct access:
+  
+  ```
+  echo "SUBSYSTEM==\"usb\", MODE=\"0660\", GROUP=\"$(id -gn)\"" | sudo tee /etc/udev/rules.d/00-usb-permissions.rules
+  udevadm control --reload-rules
+  ```
 
   **Python 3 support**
 
