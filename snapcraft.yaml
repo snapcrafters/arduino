@@ -91,6 +91,7 @@ parts:
       cp -a  $SNAPCRAFT_PART_BUILD/build/linux/work/* $SNAPCRAFT_PART_INSTALL
     stage-packages:
       - openjdk-11-jre  # the ant plugin adds the headless jre instead of the full jre.
+      - libusb-0.1-4
 
   launcher:
     plugin: dump
