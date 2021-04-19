@@ -44,6 +44,7 @@ grade: stable
 
 base: core18
 confinement: strict
+compression: lzo      # improves startup time for large snaps
 
 architectures:
   - build-on: amd64
@@ -99,6 +100,22 @@ parts:
     stage-packages:
       - yad
 
+  # Newer libusb is needed for some arduino packages. See https://github.com/snapcrafters/arduino/issues/18  
+  libusb-1-x-x:
+    plugin: autotools
+    source: https://github.com/libusb/libusb/archive/v1.0.24.tar.gz
+    build-packages:
+      - libudev-dev
+
+  # Get a recent version of lsusb. The version in bionic accesses `usb.ids`
+  # using a hardcoded path, which is incorrect in a snap. Recent versions use
+  # udev's hardware database instead.
+  usbutils-git:
+    plugin: autotools
+    source: https://github.com/gregkh/usbutils/archive/refs/tags/v013.tar.gz
+    after:
+      - libusb-1-x-x
+
   dark-arduino-theme:
     plugin: dump
     source: https://github.com/jeffThompson/DarkArduinoTheme.git
@@ -123,7 +140,7 @@ parts:
     override-prime: |
       set -ex
       snapcraftctl prime
-      echo '#!/usr/bin/env bash\npython3 "$@"\n' > $SNAPCRAFT_PRIME/usr/bin/python
+      echo '#!/bin/bash\npython3 "$@"\n' > $SNAPCRAFT_PRIME/usr/bin/python
       chmod a+x $SNAPCRAFT_PRIME/usr/bin/python
 
   # This part removes all the files in this snap which already exist in
