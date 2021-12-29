@@ -1,7 +1,7 @@
 # name: arduino-mhall119   # uncomment for arduino-mhall119 builds
 name: arduino
 title: Arduino IDE
-version: 1.8.16
+version: 1.8.19
 summary: Write code and upload it to your Arduino-compatible board.
 description: |
   Arduino is an open-source physical computing platform based on a simple I/O board and a development environment that implements the Processing/Wiring language. Arduino can be used to develop stand-alone interactive objects or can be connected to software on your computer (e.g. Flash, Processing and MaxMSP). The boards can be assembled by hand or purchased preassembled at https://arduino.cc
