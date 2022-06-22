@@ -96,6 +96,8 @@ parts:
     stage-packages:
       - openjdk-11-jre  # the ant plugin adds the headless jre instead of the full jre.
       - libusb-0.1-4
+    prime:
+      - -usr/lib/jvm/java-11-openjdk-amd64/lib/security/blacklisted.certs # broken symlink; bug in the debian package
 
   launcher:
     plugin: dump
