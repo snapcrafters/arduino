@@ -98,6 +98,8 @@ parts:
       - libusb-0.1-4
     prime:
       - -usr/lib/jvm/java-11-openjdk-amd64/lib/security/blacklisted.certs # broken symlink; bug in the debian package
+      - -usr/lib/jvm/java-11-openjdk-armhf/lib/security/blacklisted.certs # broken symlink; bug in the debian package
+      - -usr/lib/jvm/java-11-openjdk-arm64/lib/security/blacklisted.certs # broken symlink; bug in the debian package
 
   launcher:
     plugin: dump
