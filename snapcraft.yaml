@@ -42,22 +42,22 @@ license: GPL-2.0
 icon: snap/gui/arduino.png
 grade: stable
 
-base: core18
+base: core26
 confinement: strict
 compression: lzo      # improves startup time for large snaps
 
-architectures:
-  - build-on: amd64
-  - build-on: armhf
-  - build-on: arm64
+platforms:
+  amd64:
+  armhf:
+  arm64:
 
 environment:
-  PYTHONPATH: $PYTHONPATH:$SNAP/lib/python3.6/site-packages
+  PATH: $SNAP/bin:$PATH
 
 apps:
   arduino:
     extensions:
-      - gnome-3-28
+      - gnome
     command: arduino-snap
     command-chain:
       - set-environment
@@ -75,11 +75,12 @@ apps:
       - raw-usb
       - network-bind  # For OTA updates      
   pip:
-    command: usr/bin/python -m pip
+    command: bin/python3 -m pip
     command-chain:
       - set-environment
     environment:
-      PIP_USER: 1
+      PIP_USER: '1'
+      PIP_BREAK_SYSTEM_PACKAGES: '1'
     plugs:
       - network
 
@@ -87,19 +88,20 @@ parts:
   upstream:
     source: https://github.com/arduino/Arduino/releases/download/$SNAPCRAFT_PROJECT_VERSION/arduino-$SNAPCRAFT_PROJECT_VERSION.tar.xz
     source-type: tar
-    plugin: ant
-    ant-buildfile: build/build.xml
+    plugin: nil
+    build-packages:
+      - ant
+      - openjdk-11-jdk
+    build-environment:
+      - JAVA_HOME: /usr/lib/jvm/java-11-openjdk-$CRAFT_ARCH_BUILD_FOR
     override-build: |
-      set -ex
-      snapcraftctl build
-      cp -a  $SNAPCRAFT_PART_BUILD/build/linux/work/* $SNAPCRAFT_PART_INSTALL
+      ant -f build/build.xml
+      cp -a build/linux/work/. "$CRAFT_PART_INSTALL/"
+      ln -s usr/lib/jvm/java-11-openjdk-$CRAFT_ARCH_BUILD_FOR "$CRAFT_PART_INSTALL/java"
     stage-packages:
-      - openjdk-11-jre  # the ant plugin adds the headless jre instead of the full jre.
+      - openjdk-11-jre
       - libusb-0.1-4
-    prime:
-      - -usr/lib/jvm/java-11-openjdk-amd64/lib/security/blacklisted.certs # broken symlink; bug in the debian package
-      - -usr/lib/jvm/java-11-openjdk-armhf/lib/security/blacklisted.certs # broken symlink; bug in the debian package
-      - -usr/lib/jvm/java-11-openjdk-arm64/lib/security/blacklisted.certs # broken symlink; bug in the debian package
+      - usbutils
 
   launcher:
     plugin: dump
@@ -107,68 +109,27 @@ parts:
     stage-packages:
       - yad
 
-  # Newer libusb is needed for some arduino packages. See https://github.com/snapcrafters/arduino/issues/18  
-  libusb-1-x-x:
-    plugin: autotools
-    source: https://github.com/libusb/libusb/archive/v1.0.24.tar.gz
-    build-packages:
-      - libudev-dev
-
-  # Get a recent version of lsusb. The version in bionic accesses `usb.ids`
-  # using a hardcoded path, which is incorrect in a snap. Recent versions use
-  # udev's hardware database instead.
-  usbutils-git:
-    plugin: autotools
-    source: https://github.com/gregkh/usbutils/archive/refs/tags/v013.tar.gz
-    after:
-      - libusb-1-x-x
-
   dark-arduino-theme:
     plugin: dump
     source: https://github.com/jeffThompson/DarkArduinoTheme.git
     build-packages:
       - zip
     override-build: |
-      snapcraftctl build
-      mkdir -p $SNAPCRAFT_PART_INSTALL/lib/theme/
+      craftctl default
+      mkdir -p $CRAFT_PART_INSTALL/lib/theme/
       cd theme
-      zip -r $SNAPCRAFT_PART_INSTALL/lib/theme/dark-arduino-theme.zip *
+      zip -r $CRAFT_PART_INSTALL/lib/theme/dark-arduino-theme.zip *
     stage:
       - lib/theme/dark-arduino-theme.zip
 
   # Python 3 is required for certain plugins and they expect python to point to python3.
   # See https://github.com/snapcrafters/arduino/issues/5
   python3:
-    source: ""
-    plugin: python
-    python-packages:
-      - pyserial
-      - pip
-    override-prime: |
-      set -ex
-      snapcraftctl prime
-      echo '#!/bin/bash\npython3 "$@"\n' > $SNAPCRAFT_PRIME/usr/bin/python
-      chmod a+x $SNAPCRAFT_PRIME/usr/bin/python
-
-  # This part removes all the files in this snap which already exist in
-  # connected content and base snaps. Since these files will be available
-  # at runtime from the content and base snaps, they do not need to be
-  # included in this snap itself.
-  #
-  # More info: https://snapcraft-utils-library.readthedocs.io/en/latest/lib/cleanup.html 
-  #
-  cleanup:
-    after:  # Make this part run last; list all your other parts here
-      - upstream
-      - launcher
-      - dark-arduino-theme
-      - python3
     plugin: nil
-    build-snaps:  # List all content-snaps and base snaps you're using here
-      - core18
-      - gnome-3-28-1804
-    override-prime: |
-      set -eux
-      for snap in "core18" "gnome-3-28-1804" ; do  # List all content-snaps and base snaps you're using here
-        cd "/snap/$snap/current" && find . -type f,l -exec rm -f "$SNAPCRAFT_PRIME/{}" \;
-      done
+    # Preserve native modules against GNOME's usr/lib Python cleanup.
+    organize:
+      usr: .
+    stage-packages:
+      - python-is-python3
+      - python3-serial
+      - python3-pip
