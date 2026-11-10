@@ -6,24 +6,47 @@ summary: Write code and upload it to your Arduino-compatible board.
 description: |
   Arduino is an open-source physical computing platform based on a simple I/O board and a development environment that implements the Processing/Wiring language. Arduino can be used to develop stand-alone interactive objects or can be connected to software on your computer (e.g. Flash, Processing and MaxMSP). The boards can be assembled by hand or purchased preassembled at https://arduino.cc
 
-  **Setup**
+  Snap interfaces grant confinement access; host device ownership, mode bits,
+  groups and ACLs remain separate. On Ubuntu, serial devices commonly use
+  dialout, but this is not universal. If your device requires it, run:
 
-  In order to upload code an arduino board over USB, you need to add your user to the `dialout` group. Open a terminal window, run the following command and *reboot* your computer.
+      sudo usermod -a -G dialout "$USER"
 
-  > `sudo usermod -a -G dialout $USER`
+  Log out and back in after group changes. Follow board/vendor-specific udev
+  instructions when required; do not install a blanket USB rule.
 
-  Now restart your computer and you're good to go!
-  
-  If you have one of the following boards, you need to grant specific permissions to your user for accessing directly the USB. This issue is more detailed [here](https://github.com/snapcrafters/arduino/issues/10#issuecomment-716683018)
-  
-  - Arduino Uno WiFi Rev2, ATMEGA328
-  
-  For granting this direct access:
-  
-  ```
-  echo "SUBSYSTEM==\"usb\", MODE=\"0660\", GROUP=\"$(id -gn)\"" | sudo tee /etc/udev/rules.d/00-usb-permissions.rules
-  udevadm control --reload-rules
-  ```
+  For USB device access, including USB serial devices such as ttyUSB/ttyACM,
+  connect raw-usb. For sketches on removable drives, connect removable-media:
+
+      sudo snap connect arduino:raw-usb
+      sudo snap connect arduino:removable-media
+
+  Use only the connections you need. For parallel snap instances, replace
+  arduino in commands and paths with the instance name (SNAP_INSTANCE_NAME
+  inside the snap). serial-port can be useful with a suitable specific slot;
+  it is not a universal extra connection requirement. Missing raw-usb does
+  not block every upload workflow; connection state does not certify board access.
+
+  Ordinary GUI startup and sketch-file launches offer missing connections with
+  Recheck, Continue, Don't ask again, and Cancel. Commands are selectable for
+  copying into a terminal; onboarding does not run them or change host settings.
+  Headless launches and option-bearing invocations skip onboarding, except for
+  the fixed --no-sandbox option. Query or dialog errors warn and continue;
+  Cancel or closing the dialog aborts this launch.
+
+  Don't ask again saves SNAP_USER_COMMON/dont-ask-interfaces. To reset it for
+  the default instance, run:
+
+      rm "$HOME/snap/arduino/common/dont-ask-interfaces"
+
+  The old IDE 1 dont-warn-permissions marker is not migrated or used to suppress
+  this interface prompt. Select Don't ask again to opt out of the new prompt.
+
+  If a mounted drive is absent from the file chooser sidebar, browse to its
+  mount point under /media, /mnt or /run/media. This sidebar workaround is
+  separate from the connection granting filesystem access.
+
+  The separate arduino.pip command skips onboarding.
 
   **Python 3 support**
 
@@ -61,7 +84,7 @@ apps:
     command: arduino-snap
     command-chain:
       - set-environment
-      - check-permissions
+      - interface-onboarding
       # - warn-unsupported  # uncomment for arduino-mhall119 builds
     environment:
       # Fallback to XWayland if running in a Wayland session.

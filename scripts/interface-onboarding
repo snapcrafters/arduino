@@ -1,0 +1,63 @@
+#!/bin/sh
+# Inspect arguments after the executable without changing the original argv.
+first=true
+for arg do
+    if [ "$first" = true ]; then
+        first=false
+        continue
+    fi
+    case "$arg" in
+        --no-sandbox) ;;
+        -*) exec "$@" ;;
+    esac
+done
+
+[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ] || exec "$@"
+opt_out="$SNAP_USER_COMMON/dont-ask-interfaces"
+[ ! -f "$opt_out" ] || exec "$@"
+while :; do
+    commands=
+    unknown=false
+    for plug in raw-usb removable-media; do
+        # The sentinel preserves even newline-only diagnostics in substitution.
+        diagnostics=$(snapctl is-connected "$plug" 2>&1; status=$?; printf '.'; exit "$status")
+        status=$?
+        diagnostics=${diagnostics%.}
+        case "$status" in
+            0) continue ;;
+            1)
+                if [ -z "$diagnostics" ]; then
+                    commands="${commands}sudo snap connect ${SNAP_INSTANCE_NAME}:$plug\n"
+                    continue
+                fi
+                ;;
+        esac
+        unknown=true
+        printf 'Arduino interface onboarding: cannot determine %s connection (snapctl status %s). Continuing without a prompt.\n' "$plug" "$status" >&2
+        [ -z "$diagnostics" ] || printf '%s\n' "$diagnostics" >&2
+    done
+    [ "$unknown" = false ] || break
+    [ -n "$commands" ] || break
+    "$SNAP/usr/bin/yad" --title="Arduino snap connections" --center --width=620 \
+        --selectable-labels --no-markup \
+        --text="Some optional snap connections are missing. Copy only the commands you need into a terminal, then Recheck:\n\n${commands}\nraw-usb allows USB device access, including USB serial devices; removable-media allows sketches on removable drives. You can continue without these features. These commands are not run automatically.\n\nSnap connections grant confinement access; host ownership, mode bits, groups and ACLs remain separate. Serial devices commonly use dialout on Ubuntu, but this is not universal. Log out and back in after group changes. Follow board/vendor-specific udev instructions when required; do not use a blanket USB rule. A suitable serial-port slot can be useful, but is not a universal extra requirement. Connection state does not certify board access or every upload workflow." \
+        --button="Recheck:0" --button="Continue:10" \
+        --button="Don't ask again:20" --button="Cancel:30"
+    status=$?
+    case "$status" in
+        0) continue ;;
+        10) break ;;
+        20)
+            if ! (mkdir -p "$SNAP_USER_COMMON" && touch "$opt_out"); then
+                printf 'Arduino interface onboarding: could not save the opt-out in %s; the prompt may appear again. Continuing.\n' "$opt_out" >&2
+            fi
+            break
+            ;;
+        30|252) exit 1 ;;
+        *)
+            printf 'Arduino interface onboarding: dialog failed (status %s). Continuing.\n' "$status" >&2
+            break
+            ;;
+    esac
+done
+exec "$@"
