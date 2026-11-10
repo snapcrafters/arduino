@@ -11,18 +11,58 @@ Additional libraries can be installed with `arduino.pip install requests`.
 After upgrading from the old Python 3.6 snap, reinstall any user-installed
 Python packages; Python 3.6 native modules are not compatible with the new runtime.
 
-## Removable drives and opening sketches
+## Device access and optional connections
 
-Connect the removable-media interface to open and save sketches on USB drives:
+Snap interfaces grant confinement access; host device ownership, mode bits,
+groups and ACLs remain separate. On Ubuntu, serial devices commonly use the
+`dialout` group, but this is not universal. If your device requires it, run:
 
-```sh
+```shell
+sudo usermod -a -G dialout "$USER"
+```
+
+Log out and back in after changing group membership. Follow your board/vendor's
+specific udev setup instructions when required; do not install a blanket USB rule.
+
+For USB device access, including USB serial devices such as `ttyUSB`/`ttyACM`,
+connect `raw-usb`. To open sketches on removable drives, connect `removable-media`:
+
+```shell
+sudo snap connect arduino:raw-usb
 sudo snap connect arduino:removable-media
 ```
+
+Use only the connections you need. For parallel snap instances, replace `arduino`
+in these commands with the instance name (`$SNAP_INSTANCE_NAME` inside the snap).
+The declared `serial-port` interface can be useful with a suitable specific slot;
+it is not a universal extra connection requirement. Missing `raw-usb` does not
+block every upload workflow, and connection state does not certify board access.
+
+On ordinary GUI startup or sketch-file launches, the IDE offers applicable
+missing connections with Recheck, Continue, Don't ask again, and Cancel options.
+Commands are selectable for copying into a terminal; the dialog does not run
+them or change host settings. Headless launches and invocations with options
+skip onboarding, except for the fixed `--no-sandbox` option. Query or dialog
+errors warn and continue; Cancel or closing the dialog aborts this launch.
+The opt-out is stored in `$SNAP_USER_COMMON/dont-ask-interfaces`; remove that file
+to restore the prompt. For the default instance, reset it from the host with:
+
+```shell
+rm "$HOME/snap/arduino/common/dont-ask-interfaces"
+```
+
+For parallel instances, replace `arduino` in the reset path with the instance name.
+
+The separate `arduino.pip` command does not show onboarding. This interface
+prompt replaces the old permission warning once; its `dont-warn-permissions`
+marker is not migrated or used to suppress the new prompt. Select Don't ask
+again to create the new marker if desired.
 
 The desktop entry accepts sketch filenames, including multiple files. The Java
 file chooser may not list removable drives in its sidebar; browse to
 `/media/<username>/<drive>` (or the drive's mount point under `/mnt` or `/run/media`)
-instead. This does not change USB-drive discovery in the chooser.
+instead. This sidebar workaround is separate from the connection granting
+filesystem access; the connection does not change drive discovery in the chooser.
 
 ## Custom themes
 
