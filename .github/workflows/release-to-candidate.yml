@@ -3,7 +3,7 @@ name: Release
 on:
   # Run for the repository's verified release base.
   push:
-    branches: [ "candidate" ]
+    branches: [ "2" ]
   workflow_dispatch:
 
 concurrency:
@@ -27,17 +27,18 @@ jobs:
         uses: snapcrafters/ci/get-architectures@main
 
   release:
-    name: 🚢 Release to latest/candidate
+    name: 🚢 Release to 2/candidate
     needs: get-architectures
     runs-on: ubuntu-latest
-    environment: "Candidate Branch"
+    environment: "2 Branch"
     strategy:
       matrix:
         architecture: ${{ fromJSON(needs.get-architectures.outputs.architectures-list) }}
     steps:
-      - name: 🚢 Release to latest/candidate
+      - name: 🚢 Release to 2/candidate
         uses: snapcrafters/ci/release-to-candidate@main
         with:
+          channel: 2/candidate
           architecture: ${{ matrix.architecture }}
           launchpad-token: ${{ secrets.LP_BUILD_SECRET }}
           repo-token: ${{ secrets.SNAPCRAFTERS_BOT_COMMIT }}
@@ -46,7 +47,7 @@ jobs:
   call-for-testing:
     name: 📣 Create call for testing
     needs: [release, get-architectures]
-    environment: "Candidate Branch"
+    environment: "2 Branch"
     runs-on: ubuntu-latest
     outputs:
       issue-number: ${{ steps.issue.outputs.issue-number }}
@@ -55,18 +56,21 @@ jobs:
         id: issue
         uses: snapcrafters/ci/call-for-testing@main
         with:
+          channel: 2/candidate
+          promotion-channel: 2/stable
           architectures: ${{ needs.get-architectures.outputs.architectures }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
   screenshots:
     name: 📸 Gather screenshots
     needs: call-for-testing
-    environment: "Candidate Branch"
+    environment: "2 Branch"
     runs-on: ubuntu-latest
     steps:
       - name: 📸 Gather screenshots
         uses: snapcrafters/ci/get-screenshots@main
         with:
+          channel: 2/candidate
           issue-number: ${{ needs.call-for-testing.outputs.issue-number }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           screenshots-token: ${{ secrets.SNAPCRAFTERS_BOT_COMMIT }}
