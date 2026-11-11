@@ -69,3 +69,25 @@ filesystem access; the connection does not change drive discovery in the chooser
 This snap includes the [Dark Arduino Theme](https://github.com/jeffThompson/DarkArduinoTheme) as an option. You can enable it in File > Preferences > Theme.
 
 If you want to add a different theme, you can do so by placing the `.zip` file of the theme in the folder `~/snap/arduino/current/Arduino/theme`. You might need to create this folder first. *The `.zip` file needs to include all the files in the `theme` folder of your theme. Make sure to zip the contents, not the directory itself, so the theme files are in the root of the zip instead of in the theme folder.*
+
+## Install and test
+
+Install the stable snap with `sudo snap install arduino`. To test the candidate,
+use `sudo snap install arduino --channel=candidate` or
+`sudo snap refresh arduino --channel=candidate` for an existing installation.
+Report results, including `snap version`, the CPU architecture and the installed
+revision, in the repository's call-for-testing issue.
+
+## Contributing and releases
+
+Report packaging problems in [the issue tracker](https://github.com/snapcrafters/arduino/issues).
+Open pull requests against `candidate` for the legacy Arduino IDE 1.x snap.
+The [version sync workflow](https://github.com/snapcrafters/arduino/actions/workflows/sync-version-with-upstream.yml)
+checks the Arduino/Arduino latest release daily at 10:00 UTC and accepts only
+numeric 1.x versions. It does not follow Arduino IDE 2.x releases.
+
+Pull requests build and review the amd64 snap. Merging into `candidate` triggers
+Launchpad builds for amd64, armhf and arm64 and publishes successful builds to
+`latest/candidate`. The release workflow creates a call for testing and gathers
+GUI screenshots. A maintainer can promote eligible tested revisions to
+`latest/stable` with a `/promote` comment on the testing issue.
