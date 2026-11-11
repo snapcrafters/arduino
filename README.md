@@ -9,14 +9,14 @@
 <p align="center">
 <a href="https://snapcraft.io/arduino"><img src="https://snapcraft.io/arduino/badge.svg" alt="Snap Status"></a>
 <a href="https://github.com/snapcrafters/arduino/actions/workflows/sync-version-with-upstream.yml"><img src="https://github.com/snapcrafters/arduino/actions/workflows/sync-version-with-upstream.yml/badge.svg?branch=candidate" alt="Sync version with upstream"></a>
-<a href="https://github.com/snapcrafters/arduino/actions/workflows/release-to-candidate.yml"><img src="https://github.com/snapcrafters/arduino/actions/workflows/release-to-candidate.yml/badge.svg?branch=candidate" alt="Release to candidate"></a>
+<a href="https://github.com/snapcrafters/arduino/actions/workflows/release-to-candidate.yml"><img src="https://github.com/snapcrafters/arduino/actions/workflows/release-to-candidate.yml/badge.svg?branch=2" alt="Release to candidate"></a>
 <a href="https://github.com/snapcrafters/arduino/actions/workflows/promote-to-stable.yml"><img src="https://github.com/snapcrafters/arduino/actions/workflows/promote-to-stable.yml/badge.svg?branch=candidate" alt="Promote to stable"></a>
 </p>
 
 ## Install
 
 ```shell
-sudo snap install arduino
+sudo snap install arduino --channel=2/stable
 ```
 
 ([Don't have snapd installed?](https://snapcraft.io/docs/core/install))
@@ -25,14 +25,10 @@ sudo snap install arduino
 
 ## Snap configuration
 
-### Legacy IDE and Python
+### Arduino IDE 2
 
-This branch packages the legacy Arduino IDE 1.8.19 on core26, with OpenJDK 11
-and the base distribution's Python 3 (including pyserial and pip).
-Python tools using either `python` or `python3` use the bundled interpreter.
-Additional libraries can be installed with `arduino.pip install requests`.
-After upgrading from the old Python 3.6 snap, reinstall any user-installed
-Python packages; Python 3.6 native modules are not compatible with the new runtime.
+This branch packages Arduino IDE 2 for amd64 using the official Linux archive.
+Upstream does not publish Linux ARM binaries for IDE 2.
 
 ### Device access and optional connections
 
@@ -76,22 +72,70 @@ rm "$HOME/snap/arduino/common/dont-ask-interfaces"
 
 For parallel instances, replace `arduino` in the reset path with the instance name.
 
-The separate `arduino.pip` command does not show onboarding. This interface
-prompt replaces the old permission warning once; its `dont-warn-permissions`
-marker is not migrated or used to suppress the new prompt. Select Don't ask
-again to create the new marker if desired.
+The separate `arduino.cli` and `arduino.pip` commands do not show onboarding.
+When upgrading from IDE 1, the old `dont-warn-permissions` marker is not migrated
+or used to suppress this interface prompt; select Don't ask again to opt out.
 
-The desktop entry accepts sketch filenames, including multiple files. The Java
-file chooser may not list removable drives in its sidebar; browse to
-`/media/<username>/<drive>` (or the drive's mount point under `/mnt` or `/run/media`)
-instead. This sidebar workaround is separate from the connection granting
-filesystem access; the connection does not change drive discovery in the chooser.
+If a mounted drive is absent from the file dialog's sidebar, browse directly to
+`/media/<username>/<drive-name>/` (or its mount point under `/mnt` or `/run/media`).
+This sidebar workaround is separate from the connection granting filesystem
+access. The connection does not register `.ino` file associations with the host
+desktop; that problem is tracked in [#17](https://github.com/snapcrafters/arduino/issues/17).
 
-### Custom themes
+### Command-line tools
 
-This snap includes the [Dark Arduino Theme](https://github.com/jeffThompson/DarkArduinoTheme) as an option. You can enable it in File > Preferences > Theme.
+The IDE's bundled Arduino CLI is also available as `arduino.cli`:
 
-If you want to add a different theme, you can do so by placing the `.zip` file of the theme in the folder `~/snap/arduino/current/Arduino/theme`. You might need to create this folder first. *The `.zip` file needs to include all the files in the `theme` folder of your theme. Make sure to zip the contents, not the directory itself, so the theme files are in the root of the zip instead of in the theme folder.*
+```shell
+arduino.cli version
+arduino.cli core list
+arduino.cli compile --fqbn esp8266:esp8266:nodemcuv2 /path/to/sketch
+```
+
+The CLI and IDE use the same snap-local board packages and sketchbook. To also
+use the IDE's configuration, including additional board-manager URLs, launch the
+IDE once and pass its configuration file explicitly:
+
+```shell
+arduino.cli --config-file "$HOME/snap/arduino/current/.arduinoIDE/arduino-cli.yaml" core list
+```
+
+Board platforms provide their compilers, uploaders and debugger tools through
+Boards Manager. The IDE's language-server and formatting binaries remain
+internal; they do not need separate snap commands. `lsusb` and both libusb 0.1
+and 1.0 ABIs are included for board-tool compatibility.
+
+### Python board tools
+
+Python 3 and pyserial are included for tools such as the ESP8266 board package.
+Install additional Python libraries into the snap user's site-packages with:
+
+```shell
+arduino.pip install requests
+```
+
+After upgrading from the Python 3.6-based snap, reinstall any additional Python
+packages with `arduino.pip`. Old user-site directories are version-specific and
+are not added to the new interpreter's import path.
+
+New `arduino.pip` installs use the stable `current` interpreter path so console
+commands survive snap refreshes. Reinstall console tools installed by older
+builds once; their scripts may still reference a removed snap revision.
+
+### Upgrading from IDE 1
+
+IDE 2 has built-in light and dark themes; the bundled IDE 1 Dark Arduino Theme
+and Java launcher are no longer used. IDE 1 Java plugins such as ESP8266FS and
+legacy theme ZIPs are incompatible with IDE 2 and cannot simply be copied over.
+Choose tooling explicitly compatible with IDE 2 and your board/filesystem;
+LittleFS tooling is not a drop-in way to preserve an existing SPIFFS filesystem.
+Keep a backup of sketches and preferences before refreshing. No migration hook
+is provided. Check the sketchbook location, preferences and installed board
+packages in IDE 2 before relying on the upgrade.
+
+The packaging stays strictly confined. The `--no-sandbox` argument disables
+Electron's nested Chromium sandbox, not snap confinement.
+
 
 ## How to contribute to this snap
 
@@ -111,11 +155,11 @@ git fetch --all
 
 ### Submitting changes in a pull request
 
-1. Create your branch from the current legacy IDE candidate branch:
+1. Create your branch from the IDE 2 branch:
 
    ```shell
    git fetch --all -p
-   git checkout -b my-bugfix-branch snapcrafters/candidate
+   git checkout -b my-bugfix-branch snapcrafters/2
    ```
 
 2. Make your changes and build locally with `snapcraft`.
@@ -127,28 +171,27 @@ git fetch --all
    git push -u myfork my-bugfix-branch
    ```
 
-4. Open a pull request against `snapcrafters/arduino:candidate`. The pull request
+4. Open a pull request against `snapcrafters/arduino:2`. The pull request
    builds and reviews the amd64 snap; build artifacts are available from its
    Actions run. A maintainer reviews the change before merging.
 
-The [version sync workflow](https://github.com/snapcrafters/arduino/actions/workflows/sync-version-with-upstream.yml)
-checks the Arduino/Arduino latest release daily at 10:00 UTC and accepts only
-numeric 1.x versions. It does not follow Arduino IDE 2.x releases.
+The version-sync and promotion workflows are maintained on `candidate`, as in
+Sublime Text and Sublime Merge. The daily updater follows Arduino/arduino-ide
+2.x releases on branch `2`, including the archive checksum.
 
-Merging into `candidate` triggers Launchpad builds for amd64, armhf and arm64 and
-publishes successful builds to `latest/candidate`. The release workflow creates a
-call for testing and gathers GUI screenshots. A maintainer can promote eligible
-tested revisions to `latest/stable` with a `/promote` comment on the testing issue.
+Merging into `2` builds amd64 and publishes to `2/candidate`, creates a call for
+testing and gathers screenshots. Eligible tested revisions can be promoted to
+`2/stable` with the channel-specific `/promote` command on the testing issue.
 
 ### Testing
 
 Install the candidate with:
 
 ```shell
-sudo snap install arduino --channel=candidate
+sudo snap install arduino --channel=2/candidate
 ```
 
-For an existing installation, use `sudo snap refresh arduino --channel=candidate`.
+For an existing installation, use `sudo snap refresh arduino --channel=2/candidate`.
 Report results in the repository's call-for-testing issue, including the output of
 `snap version`, `lscpu | grep Architecture` and `snap info arduino | grep installed`.
 
@@ -158,7 +201,7 @@ Report results in the repository's call-for-testing issue, including the output 
 
 ## License
 
-The recipe declares `GPL-2.0` for Arduino IDE. See the
-[upstream license](https://github.com/arduino/Arduino/blob/1.8.19/license.txt).
+The recipe declares `AGPL-3.0-or-later` for Arduino IDE 2. See the
+[upstream license](https://github.com/arduino/arduino-ide/blob/2.3.10/LICENSE.txt).
 This repository has no separate LICENSE file for its packaging scripts and
 documentation; no independent packaging license is asserted here.

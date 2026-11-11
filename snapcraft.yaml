@@ -1,10 +1,11 @@
-# name: arduino-mhall119   # uncomment for arduino-mhall119 builds
 name: arduino
 title: Arduino IDE
-version: 1.8.19
+version: 2.3.10
 summary: Write code and upload it to your Arduino-compatible board.
 description: |
-  Arduino is an open-source physical computing platform based on a simple I/O board and a development environment that implements the Processing/Wiring language. Arduino can be used to develop stand-alone interactive objects or can be connected to software on your computer (e.g. Flash, Processing and MaxMSP). The boards can be assembled by hand or purchased preassembled at https://arduino.cc
+  Arduino IDE is an open-source editor for writing sketches and uploading
+  them to Arduino-compatible boards. It includes code completion, a debugger,
+  and tools for managing boards and libraries.
 
   Snap interfaces grant confinement access; host device ownership, mode bits,
   groups and ACLs remain separate. On Ubuntu, serial devices commonly use
@@ -46,113 +47,84 @@ description: |
   mount point under /media, /mnt or /run/media. This sidebar workaround is
   separate from the connection granting filesystem access.
 
-  The separate arduino.pip command skips onboarding.
+  The separate arduino.cli and arduino.pip commands skip onboarding.
 
-  **Python 3 support**
+  Python 3 and pyserial are included for board tools such as ESP8266.
+  Additional Python libraries can be installed inside the snap with:
 
-  This version of Arduino IDE runs in a sandbox for improved security and stability. As a result, it does not have access to the Python libraries on your device.
+      arduino.pip install requests
 
-  Python 3 and the `serial` library are installed inside of the sandbox so they can be used by plugins. If a plugin needs additional Python 3 libraries, you can install them using the `arduino.pip` command. For example, the following command installs the `requests` library inside of the sandbox so the Arduino IDE can use it.
-
-  > `arduino.pip install requests`
-
-  Python 2 is currently not supported in this package because it reached end of life on January 1st 2020. If you have hardware that _requires_ Python 2 support, please let us know.
-  
-  **Are you having issues?**
-
-  Let us know by creating a new issue here: https://github.com/snapcrafters/arduino/issues 
-license: GPL-2.0
+license: AGPL-3.0-or-later
 icon: snap/gui/arduino.png
 grade: stable
-
 base: core26
 confinement: strict
-compression: lzo      # improves startup time for large snaps
+compression: lzo
 
 platforms:
   amd64:
-  armhf:
-  arm64:
 
 environment:
-  PATH: $SNAP/bin:$PATH
+  PATH: $SNAP_USER_DATA/.local/bin:$SNAP/bin:$PATH
 
 apps:
   arduino:
-    extensions:
-      - gnome
-    command: arduino-snap
-    command-chain:
-      - set-environment
-      - interface-onboarding
-      # - warn-unsupported  # uncomment for arduino-mhall119 builds
-    environment:
-      # Fallback to XWayland if running in a Wayland session.
-      DISABLE_WAYLAND: 1
+    extensions: [gnome]
+    command: arduino-ide --no-sandbox
+    command-chain: [bin/interface-onboarding]
     plugs:
-      - unity7
       - home
       - removable-media
       - network
+      - network-bind
       - serial-port
       - raw-usb
-      - network-bind  # For OTA updates      
+      - browser-support
+      - audio-playback
+  cli:
+    command: resources/app/lib/backend/resources/arduino-cli
+    plugs:
+      - home
+      - removable-media
+      - network
+      - network-bind
+      - serial-port
+      - raw-usb
   pip:
     command: bin/python3 -m pip
-    command-chain:
-      - set-environment
     environment:
       PIP_USER: '1'
       PIP_BREAK_SYSTEM_PACKAGES: '1'
-    plugs:
-      - network
+      PIP_PYTHON: /snap/$SNAP_INSTANCE_NAME/current/bin/python3
+    plugs: [network]
 
 parts:
-  upstream:
-    source: https://github.com/arduino/Arduino/releases/download/$SNAPCRAFT_PROJECT_VERSION/arduino-$SNAPCRAFT_PROJECT_VERSION.tar.xz
-    source-type: tar
-    plugin: nil
-    build-packages:
-      - ant
-      - openjdk-11-jdk
-    build-environment:
-      - JAVA_HOME: /usr/lib/jvm/java-11-openjdk-$CRAFT_ARCH_BUILD_FOR
-    override-build: |
-      ant -f build/build.xml
-      cp -a build/linux/work/. "$CRAFT_PART_INSTALL/"
-      ln -s usr/lib/jvm/java-11-openjdk-$CRAFT_ARCH_BUILD_FOR "$CRAFT_PART_INSTALL/java"
-    stage-packages:
-      - openjdk-11-jre
-      - libusb-0.1-4
-      - usbutils
-
-  launcher:
+  interface-onboarding:
     plugin: dump
-    source: scripts
-    stage-packages:
-      - yad
+    source: snap/local
+    stage-packages: [yad]
 
-  dark-arduino-theme:
-    plugin: dump
-    source: https://github.com/jeffThompson/DarkArduinoTheme.git
-    build-packages:
-      - zip
-    override-build: |
-      craftctl default
-      mkdir -p $CRAFT_PART_INSTALL/lib/theme/
-      cd theme
-      zip -r $CRAFT_PART_INSTALL/lib/theme/dark-arduino-theme.zip *
-    stage:
-      - lib/theme/dark-arduino-theme.zip
-
-  # Python 3 is required for certain plugins and they expect python to point to python3.
-  # See https://github.com/snapcrafters/arduino/issues/5
-  python3:
+  # core26's df resolves outside snapd's allowed base executable paths.
+  df:
     plugin: nil
-    # Preserve native modules against GNOME's usr/lib Python cleanup.
+    stage-packages: [gnu-coreutils]
+    organize:
+      usr/bin/gnudf: bin/df
+    stage: [bin/df]
+
+  arduino:
+    plugin: dump
+    source: https://github.com/arduino/arduino-ide/releases/download/$SNAPCRAFT_PROJECT_VERSION/arduino-ide_${SNAPCRAFT_PROJECT_VERSION}_Linux_64bit.zip
+    source-subdir: arduino-ide_${SNAPCRAFT_PROJECT_VERSION}_Linux_64bit
+    source-checksum: sha256/cc8a0b01e763d4646b670ce70c1bc8c389a0fa14ab556dcc0749c03f475a7975
+    # Keep Python native modules outside the GNOME cleanup's usr/lib paths.
     organize:
       usr: .
     stage-packages:
+      - libnss3
+      - libusb-0.1-4  # Legacy uploaders such as Micronucleus need this ABI (#13).
+      - libxkbfile1
+      - usbutils
       - python-is-python3
       - python3-serial
       - python3-pip
