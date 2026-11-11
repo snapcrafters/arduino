@@ -1,15 +1,12 @@
 [Desktop Entry]
 Type=Application
 Name=Arduino IDE
-# Name=arduino-mhall119
 GenericName=Arduino IDE
-# GenericName=arduino-mhall119
 Comment=Open-source electronics prototyping platform
-Exec=arduino %F
-# Exec=arduino-mhall119.arduino
+Exec=arduino %U
 Icon=${SNAP}/meta/gui/arduino.png
 Terminal=false
 Categories=Development;IDE;Electronics;
-MimeType=text/x-arduino;
+MimeType=text/x-arduino;x-scheme-handler/arduino-ide;
 Keywords=embedded electronics;electronics;avr;microcontroller;
-StartupWMClass=processing-app-Base
+StartupWMClass=Arduino IDE
