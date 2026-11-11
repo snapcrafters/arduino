@@ -133,12 +133,18 @@ git fetch --all
 
 The [version sync workflow](https://github.com/snapcrafters/arduino/actions/workflows/sync-version-with-upstream.yml)
 checks the Arduino/Arduino latest release daily at 10:00 UTC and accepts only
-numeric 1.x versions. It does not follow Arduino IDE 2.x releases.
+numeric 1.x versions for `candidate`. A separate job updates branch `2` from
+Arduino/arduino-ide 2.x releases, including the Linux archive checksum.
 
 Merging into `candidate` triggers Launchpad builds for amd64, armhf and arm64 and
 publishes successful builds to `latest/candidate`. The release workflow creates a
 call for testing and gathers GUI screenshots. A maintainer can promote eligible
 tested revisions to `latest/stable` with a `/promote` comment on the testing issue.
+
+Branch `2` maintains IDE 2 and releases amd64 to `2/candidate`. Its PR and release
+workflows live on that branch; scheduled updates and issue-comment promotion to
+`2/stable` run here on `candidate`, using the `2 Branch` environment. Promotion
+jobs match both the requested channel and the call-for-testing issue channel.
 
 ### Testing
 
