@@ -1,23 +1,16 @@
-name: 🧪 Test snap can be built on x86_64
-
+name: Pull Request
 on:
-  push:
-    branches: [ candidate ]
   pull_request:
-    branches: [ candidate ]
-
+    branches: [ "candidate" ]
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 permissions:
   contents: read
-
 jobs:
   build:
+    name: 🧪 Build snap on amd64
     runs-on: ubuntu-latest
     steps:
-      - name: Build and review snap on amd64
+      - name: 🧪 Build snap on amd64
         uses: snapcrafters/ci/test-snap-build@main
-        with:
-          snapcraft-channel: latest/stable
