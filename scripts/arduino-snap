@@ -26,6 +26,9 @@ fi
 
 # Collect options to java in an array, to properly handle whitespace in options
 JAVA_OPTIONS=("-DAPP_DIR=$APPDIR")
+# Arduino 1.8.19's GTKLookAndFeelFixer reflects into this internal GTK package.
+# Keep its cosmetic workaround compatible with OpenJDK 11 without global JVM options.
+JAVA_OPTIONS+=("--add-opens=java.desktop/com.sun.java.swing.plaf.gtk=ALL-UNNAMED")
 
 # Only show the splash screen when no options are present
 if [[ "$@" != *"--"* ]] ; then
