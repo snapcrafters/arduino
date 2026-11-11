@@ -118,6 +118,16 @@ parts:
     build-environment:
       - JAVA_HOME: /usr/lib/jvm/java-11-openjdk-$CRAFT_ARCH_BUILD_FOR
     override-build: |
+      # Ant's Java downloader needs system properties for the builder's proxy.
+      proxy="${http_proxy:-${HTTP_PROXY:-${https_proxy:-${HTTPS_PROXY:-}}}}"
+      if [ -n "$proxy" ]; then
+        proxy="${proxy#*://}"
+        proxy="${proxy%%/*}"
+        proxy_host="${proxy%:*}"
+        proxy_port="${proxy##*:}"
+        [ "$proxy_host" != "$proxy_port" ] || proxy_port=80
+        export ANT_OPTS="${ANT_OPTS:+$ANT_OPTS }-Dhttp.proxyHost=$proxy_host -Dhttp.proxyPort=$proxy_port -Dhttps.proxyHost=$proxy_host -Dhttps.proxyPort=$proxy_port"
+      fi
       ant -f build/build.xml
       cp -a build/linux/work/. "$CRAFT_PART_INSTALL/"
       ln -s usr/lib/jvm/java-11-openjdk-$CRAFT_ARCH_BUILD_FOR "$CRAFT_PART_INSTALL/java"
