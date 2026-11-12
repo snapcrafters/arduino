@@ -1,6 +1,6 @@
 name: arduino
 title: Arduino IDE
-version: 2.3.10
+version: 2.3.11
 summary: Write code and upload it to your Arduino-compatible board.
 description: |
   Arduino IDE is an open-source editor for writing sketches and uploading
@@ -116,7 +116,7 @@ parts:
     plugin: dump
     source: https://github.com/arduino/arduino-ide/releases/download/$SNAPCRAFT_PROJECT_VERSION/arduino-ide_${SNAPCRAFT_PROJECT_VERSION}_Linux_64bit.zip
     source-subdir: arduino-ide_${SNAPCRAFT_PROJECT_VERSION}_Linux_64bit
-    source-checksum: sha256/cc8a0b01e763d4646b670ce70c1bc8c389a0fa14ab556dcc0749c03f475a7975
+    source-checksum: sha256/1e009f3c720092e6fae4e71809e0b755058e8c5d59eac7548b288d4f42b5e9b1
     # Keep Python native modules outside the GNOME cleanup's usr/lib paths.
     organize:
       usr: .
